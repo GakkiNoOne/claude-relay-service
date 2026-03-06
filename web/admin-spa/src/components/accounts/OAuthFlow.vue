@@ -815,6 +815,10 @@ const props = defineProps({
   proxy: {
     type: Object,
     default: null
+  },
+  clientId: {
+    type: String,
+    default: ''
   }
 })
 
@@ -1001,7 +1005,10 @@ const generateAuthUrl = async () => {
       authUrl.value = result.authUrl
       sessionId.value = result.sessionId
     } else if (props.platform === 'openai') {
-      const result = await accountsStore.generateOpenAIAuthUrl(proxyConfig)
+      const result = await accountsStore.generateOpenAIAuthUrl({
+        ...proxyConfig,
+        clientId: props.clientId || ''
+      })
       authUrl.value = result.authUrl
       sessionId.value = result.sessionId
     } else if (props.platform === 'droid') {
@@ -1113,10 +1120,10 @@ const exchangeCode = async () => {
         oauthProvider: geminiOauthProvider.value
       }
     } else if (props.platform === 'openai') {
-      // OpenAI使用code和sessionId
       data = {
         code: authCode.value.trim(),
-        sessionId: sessionId.value
+        sessionId: sessionId.value,
+        clientId: props.clientId || ''
       }
     } else if (props.platform === 'droid') {
       data = {

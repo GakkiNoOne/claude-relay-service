@@ -19,9 +19,11 @@ const { formatAccountExpiry, mapExpiryField } = require('./utils')
 const router = express.Router()
 
 // OpenAI OAuth 配置
+const DEFAULT_CLIENT_ID = 'app_EMoamEEZ73f0CkXaXp7hrann'
+
 const OPENAI_CONFIG = {
   BASE_URL: 'https://auth.openai.com',
-  CLIENT_ID: 'app_EMoamEEZ73f0CkXaXp7hrann',
+  CLIENT_ID: DEFAULT_CLIENT_ID,
   REDIRECT_URI: 'http://localhost:1455/auth/callback',
   SCOPE: 'openid profile email offline_access'
 }
@@ -43,7 +45,7 @@ function generateOpenAIPKCE() {
 // 生成 OpenAI OAuth 授权 URL
 router.post('/generate-auth-url', authenticateAdmin, async (req, res) => {
   try {
-    const { proxy } = req.body
+    const { proxy, clientId } = req.body
 
     // 生成 PKCE 参数
     const pkce = generateOpenAIPKCE()
@@ -68,7 +70,7 @@ router.post('/generate-auth-url', authenticateAdmin, async (req, res) => {
     // 构建授权 URL 参数
     const params = new URLSearchParams({
       response_type: 'code',
-      client_id: OPENAI_CONFIG.CLIENT_ID,
+      client_id: clientId || OPENAI_CONFIG.CLIENT_ID,
       redirect_uri: OPENAI_CONFIG.REDIRECT_URI,
       scope: OPENAI_CONFIG.SCOPE,
       code_challenge: pkce.codeChallenge,
@@ -109,7 +111,7 @@ router.post('/generate-auth-url', authenticateAdmin, async (req, res) => {
 // 交换 OpenAI 授权码
 router.post('/exchange-code', authenticateAdmin, async (req, res) => {
   try {
-    const { code, sessionId } = req.body
+    const { code, sessionId, clientId } = req.body
 
     if (!code || !sessionId) {
       return res.status(400).json({
@@ -132,7 +134,7 @@ router.post('/exchange-code', authenticateAdmin, async (req, res) => {
       grant_type: 'authorization_code',
       code: code.trim(),
       redirect_uri: OPENAI_CONFIG.REDIRECT_URI,
-      client_id: OPENAI_CONFIG.CLIENT_ID,
+      client_id: clientId || OPENAI_CONFIG.CLIENT_ID,
       code_verifier: sessionData.codeVerifier
     }
 
@@ -330,6 +332,7 @@ router.post('/', authenticateAdmin, async (req, res) => {
       groupIds, // 支持多分组
       rateLimitDuration,
       priority,
+      clientId,
       needsImmediateRefresh, // 是否需要立即刷新
       requireRefreshSuccess // 是否必须刷新成功才能创建
     } = req.body
@@ -352,6 +355,7 @@ router.post('/', authenticateAdmin, async (req, res) => {
       openaiOauth: openaiOauth || {},
       accountInfo: accountInfo || {},
       proxy: proxy || null,
+      clientId: clientId || '',
       isActive: true,
       schedulable: true
     }
@@ -626,6 +630,10 @@ router.put('/:id', authenticateAdmin, async (req, res) => {
 
     // 准备更新数据
     const updateData = { ...mappedUpdates }
+
+    if (mappedUpdates.clientId !== undefined) {
+      updateData.clientId = mappedUpdates.clientId
+    }
 
     // 处理敏感数据加密
     if (mappedUpdates.openaiOauth) {

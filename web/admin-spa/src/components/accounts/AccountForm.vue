@@ -2163,6 +2163,22 @@
                 </p>
               </div>
 
+              <div v-if="form.platform === 'openai'">
+                <label class="mb-3 block text-sm font-semibold text-gray-700 dark:text-gray-300"
+                  >Client ID</label
+                >
+                <input
+                  v-model="form.openaiClientId"
+                  class="form-input w-full border-gray-300 font-mono text-xs dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:placeholder-gray-400"
+                  placeholder="app_EMoamEEZ73f0CkXaXp7hrann"
+                  type="text"
+                />
+                <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                  <i class="fas fa-info-circle mr-1" />
+                  OpenAI OAuth Client ID，默认使用 Codex CLI 官方 ID，可自定义
+                </p>
+              </div>
+
               <div v-else>
                 <label class="mb-3 block text-sm font-semibold text-gray-700 dark:text-gray-300"
                   >Refresh Token (可选)</label
@@ -2314,6 +2330,7 @@
           ref="oauthFlowRef"
           :platform="form.platform"
           :proxy="form.proxy"
+          :client-id="form.openaiClientId"
           @back="oauthStep = 1"
           @success="handleOAuthSuccess"
         />
@@ -3968,6 +3985,22 @@
                   rows="4"
                 />
               </div>
+
+              <div v-if="form.platform === 'openai' || props.account?.platform === 'openai'">
+                <label class="mb-3 block text-sm font-semibold text-gray-700 dark:text-gray-300"
+                  >Client ID</label
+                >
+                <input
+                  v-model="form.openaiClientId"
+                  class="form-input w-full border-gray-300 font-mono text-xs dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:placeholder-gray-400"
+                  placeholder="app_EMoamEEZ73f0CkXaXp7hrann"
+                  type="text"
+                />
+                <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                  <i class="fas fa-info-circle mr-1" />
+                  OpenAI OAuth Client ID，默认使用 Codex CLI 官方 ID，可自定义
+                </p>
+              </div>
             </div>
           </div>
 
@@ -4333,6 +4366,7 @@ const form = ref({
   projectId: props.account?.projectId || '',
   accessToken: '',
   refreshToken: '',
+  openaiClientId: props.account?.clientId || 'app_EMoamEEZ73f0CkXaXp7hrann',
   apiKeysInput: '',
   apiKeyUpdateMode: 'append',
   proxy: initProxyConfig(),
@@ -5106,6 +5140,7 @@ const handleOAuthSuccess = async (tokenInfoOrList) => {
     } else if (currentPlatform === 'openai') {
       data.openaiOauth = tokenInfo.tokens || tokenInfo
       data.accountInfo = tokenInfo.accountInfo
+      data.clientId = form.value.openaiClientId || ''
       data.priority = form.value.priority || 50
     } else if (currentPlatform === 'droid') {
       const rawTokens = tokenInfo.tokens || tokenInfo || {}
@@ -5460,6 +5495,7 @@ const createAccount = async () => {
         refreshToken: form.value.refreshToken, // Refresh Token 必填
         expires_in: Math.floor(expiresInMs / 1000) // 转换为秒
       }
+      data.clientId = form.value.openaiClientId || ''
 
       // 账户信息将在首次刷新时自动获取
       data.accountInfo = {
@@ -5745,6 +5781,8 @@ const updateAccount = async () => {
           refreshToken: trimmedRefreshToken || '',
           expires_in: Math.floor(expiresInMs / 1000) // 转换为秒
         }
+
+        data.clientId = form.value.openaiClientId || ''
 
         // 编辑 OpenAI 账户时，如果更新了 Refresh Token，也需要验证
         if (trimmedRefreshToken && trimmedRefreshToken !== props.account.refreshToken) {
@@ -6459,6 +6497,7 @@ watch(
         projectId: newAccount.projectId || '',
         accessToken: '',
         refreshToken: '',
+        openaiClientId: newAccount.clientId || 'app_EMoamEEZ73f0CkXaXp7hrann',
         authenticationMethod: newAccount.authenticationMethod || '',
         apiKeysInput: '',
         apiKeyUpdateMode: 'append',

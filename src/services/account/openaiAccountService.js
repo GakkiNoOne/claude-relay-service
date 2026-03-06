@@ -114,10 +114,10 @@ function buildCodexUsageSnapshot(accountData) {
 }
 
 // 刷新访问令牌
-async function refreshAccessToken(refreshToken, proxy = null) {
+async function refreshAccessToken(refreshToken, proxy = null, clientId = null) {
   try {
-    // Codex CLI 的官方 CLIENT_ID
-    const CLIENT_ID = 'app_EMoamEEZ73f0CkXaXp7hrann'
+    const DEFAULT_CLIENT_ID = 'app_EMoamEEZ73f0CkXaXp7hrann'
+    const CLIENT_ID = clientId || DEFAULT_CLIENT_ID
 
     // 准备请求数据
     const requestData = new URLSearchParams({
@@ -332,7 +332,8 @@ async function refreshAccountToken(accountId) {
       }
     }
 
-    const newTokens = await refreshAccessToken(refreshToken, proxy)
+    const accountClientId = account.clientId || null
+    const newTokens = await refreshAccessToken(refreshToken, proxy, accountClientId)
     if (!newTokens) {
       throw new Error('Failed to refresh token')
     }
@@ -465,6 +466,7 @@ async function createAccount(accountData) {
       accountData.rateLimitDuration !== undefined && accountData.rateLimitDuration !== null
         ? accountData.rateLimitDuration
         : 60,
+    clientId: accountData.clientId || '',
     // OAuth相关字段（加密存储）
     // ID Token 现在是可选的，如果没有提供会在首次刷新时自动获取
     idToken: oauthData.idToken && oauthData.idToken.trim() ? encrypt(oauthData.idToken) : '',
