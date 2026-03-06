@@ -2328,9 +2328,9 @@
         <OAuthFlow
           v-if="oauthStep === 2 && form.addType === 'oauth'"
           ref="oauthFlowRef"
+          :client-id="form.openaiClientId"
           :platform="form.platform"
           :proxy="form.proxy"
-          :client-id="form.openaiClientId"
           @back="oauthStep = 1"
           @success="handleOAuthSuccess"
         />
